@@ -36,24 +36,32 @@ func InjectEnvs(sp interface{}, envs []string) error {
 	m := toMap(envs)
 	t := v.Type()
 	for i := 0; i < t.NumField(); i++ {
-		fv := v.Field(i)
-		if !fv.CanSet() {
+		vf := v.Field(i)
+		if !vf.CanSet() {
 			continue
 		}
 		tag := readTag(t.Field(i))
+		if tag.skip() {
+			continue
+		}
 
 		// 環境変数から探す
 		envValue, found := m.lookup(tag.envKey)
 		if tag.required && !found {
 			return fmt.Errorf("%s is required, but not found", tag.envKey)
 		}
-		if !found {
-			fv.SetString(tag.defaultValue)
+
+		// 現状はstringのみ
+		if vf.Kind() != reflect.String {
 			continue
 		}
 
-		// 現状はstring決め打ち
-		fv.SetString(envValue)
+		if !found {
+			vf.SetString(tag.defaultValue)
+			continue
+		}
+
+		vf.SetString(envValue)
 	}
 
 	return nil
@@ -87,6 +95,10 @@ type tag struct {
 	envKey       string
 	defaultValue string
 	required     bool
+}
+
+func (t tag) skip() bool {
+	return t.envKey == ""
 }
 
 type envMap map[string]string
