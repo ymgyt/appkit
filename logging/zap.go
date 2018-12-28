@@ -9,14 +9,16 @@ import (
 )
 
 const (
-	encodeConsole = "console"
-	encodeJSON    = "json"
+	EncodeConsole = "console"
+	EncodeJSON    = "json"
 )
 
 // Config -
 type Config struct {
-	Out   io.Writer
-	Level string
+	Out    io.Writer
+	Level  string
+	Encode string
+	Color  bool
 }
 
 // Must -
@@ -44,22 +46,24 @@ func New(cfg *Config) (*zap.Logger, error) {
 	}
 
 	var level zap.AtomicLevel
-	var encode string
 	switch strings.ToLower(cfg.Level) {
 	case "debug":
 		level = zap.NewAtomicLevelAt(zap.DebugLevel)
-		encode = encodeConsole
-		encCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	case "info":
+		level = zap.NewAtomicLevelAt(zap.InfoLevel)
 	default:
 		level = zap.NewAtomicLevelAt(zap.InfoLevel)
-		encode = encodeJSON
 	}
 
 	var encoder zapcore.Encoder
-	if encode == encodeConsole {
+	if cfg.Encode == EncodeConsole {
 		encoder = zapcore.NewConsoleEncoder(encCfg)
 	} else {
 		encoder = zapcore.NewJSONEncoder(encCfg)
+	}
+
+	if cfg.Color {
+		encCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	}
 
 	core := zapcore.NewCore(encoder, zapcore.AddSync(cfg.Out), level)
