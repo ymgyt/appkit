@@ -55,15 +55,15 @@ func New(cfg *Config) (*zap.Logger, error) {
 		level = zap.NewAtomicLevelAt(zap.InfoLevel)
 	}
 
+	if cfg.Color {
+		encCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	}
+
 	var encoder zapcore.Encoder
 	if cfg.Encode == EncodeConsole {
 		encoder = zapcore.NewConsoleEncoder(encCfg)
 	} else {
 		encoder = zapcore.NewJSONEncoder(encCfg)
-	}
-
-	if cfg.Color {
-		encCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	}
 
 	core := zapcore.NewCore(encoder, zapcore.AddSync(cfg.Out), level)
